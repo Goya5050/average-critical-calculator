@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>平均会心率計算ツール</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --bg-card: #181c27;
+      --bg-input: #1e2336;
+      --border: rgba(255,255,255,0.08);
+      --border-hover: rgba(255,255,255,0.16);
+      --text: #e8eaf0;
+      --text-muted: #7a8099;
+      --text-dim: #4a5068;
+      --accent: #4f8ef7;
+      --accent-glow: rgba(79,142,247,0.18);
+      --accent-dim: rgba(79,142,247,0.12);
+      --green: #3ecf8e;
+      --green-dim: rgba(62,207,142,0.12);
+      --amber: #f59e0b;
+      --amber-dim: rgba(245,158,11,0.12);
+      --red: #f87171;
+      --radius: 10px;
+      --radius-sm: 6px;
+      --mono: 'DM Mono', monospace;
+      --sans: 'Noto Sans JP', sans-serif;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 14px;
+      line-height: 1.6;
+      min-height: 100vh;
+      padding: 2rem 1rem 4rem;
+    }
+
+    .page-header {
+      max-width: 760px;
+      margin: 0 auto 2.5rem;
+      animation: fadeUp 0.5s ease both;
+    }
+
+    .page-title {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 6px;
+    }
+
+    .page-title span {
+      color: var(--accent);
+    }
+
+    .page-sub {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 10px;
+    }
+
+    .base-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 2rem;
+      animation: fadeUp 0.5s 0.05s ease both;
+    }
+
+    .field-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      transition: border-color 0.2s;
+    }
+
+    .field-card:focus-within {
+      border-color: var(--border-hover);
+    }
+
+    .field-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      display: block;
+    }
+
+    .field-input-wrap {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+
+    input[type=number], input[type=text] {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 20px;
+      font-weight: 500;
+      padding: 6px 10px;
+      width: 100%;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      -moz-appearance: textfield;
+    }
+
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+    input[type=number]:focus, input[type=text]:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+
+    .unit {
+      font-size: 13px;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .events-section {
+      margin-bottom: 2rem;
+      animation: fadeUp 0.5s 0.1s ease both;
+    }
+
+    .events-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .event-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      margin-bottom: 10px;
+      transition: border-color 0.2s;
+      animation: slideIn 0.3s ease both;
+    }
+
+    .event-item:hover {
+      border-color: var(--border-hover);
+    }
+
+    .event-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+      gap: 8px;
+    }
+
+    .event-name-input {
+      background: none;
+      border: none;
+      font-size: 14px;
+      font-weight: 500;
+      font-family: var(--sans);
+      color: var(--text);
+      padding: 0;
+      outline: none;
+      width: 100%;
+      flex: 1;
+    }
+
+    .event-name-input:focus {
+      border-bottom: 1px solid var(--accent);
+      box-shadow: none;
+    }
+
+    .type-toggle {
+      display: flex;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .type-btn {
+      padding: 4px 12px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      font-family: var(--sans);
+    }
+
+    .type-btn.active-cond {
+      background: var(--accent-dim);
+      color: var(--accent);
+    }
+
+    .type-btn.active-const {
+      background: var(--green-dim);
+      color: var(--green);
+    }
+
+    .event-fields {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+    }
+
+    .event-field label {
+      display: block;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+
+    .event-field input[type=number] {
+      font-size: 15px;
+      padding: 5px 8px;
+    }
+
+    .del-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-dim);
+      font-size: 11px;
+      padding: 4px 10px;
+      cursor: pointer;
+      font-family: var(--sans);
+      transition: border-color 0.2s, color 0.2s;
+      flex-shrink: 0;
+    }
+
+    .del-btn:hover {
+      border-color: var(--red);
+      color: var(--red);
+    }
+
+    .add-btn {
+      width: 100%;
+      background: none;
+      border: 1px dashed var(--border-hover);
+      border-radius: var(--radius);
+      color: var(--text-muted);
+      font-size: 13px;
+      font-family: var(--sans);
+      padding: 12px;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s, background 0.2s;
+    }
+
+    .add-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-dim);
+    }
+
+    .result-section {
+      animation: fadeUp 0.5s 0.15s ease both;
+    }
+
+    .result-cards {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .result-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+    }
+
+    .result-card.primary {
+      border-color: rgba(79,142,247,0.3);
+      background: linear-gradient(135deg, var(--bg-card) 60%, rgba(79,142,247,0.06));
+    }
+
+    .result-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .result-value {
+      font-family: var(--mono);
+      font-size: 28px;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .result-card.primary .result-value {
+      color: var(--accent);
+    }
+
+    .breakdown {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .bd-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 1.25rem;
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+    }
+
+    .bd-row:last-child {
+      border-bottom: none;
+    }
+
+    .bd-row.total {
+      background: var(--accent-dim);
+    }
+
+    .bd-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-muted);
+      font-size: 13px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .bd-name {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .badge {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      padding: 2px 7px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    .badge-cond {
+      background: var(--accent-dim);
+      color: var(--accent);
+    }
+
+    .badge-const {
+      background: var(--green-dim);
+      color: var(--green);
+    }
+
+    .bd-right {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--text);
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .bd-row.total .bd-left { color: var(--text); font-weight: 500; }
+    .bd-row.total .bd-right { color: var(--accent); font-weight: 500; font-size: 15px; }
+
+    .uptime-bar-wrap {
+      width: 60px;
+      height: 4px;
+      background: var(--bg-input);
+      border-radius: 2px;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .uptime-bar {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      transition: width 0.4s ease;
+    }
+
+    .formula-box {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      margin-top: 1.5rem;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.8;
+    }
+
+    .formula-box .hl { color: var(--accent); }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 540px) {
+      .base-row { grid-template-columns: 1fr; }
+      .result-cards { grid-template-columns: 1fr; }
+      .event-fields { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-header">
+    <h1 class="page-title">平均会心率<span>計算ツール</span></h1>
+    <p class="page-sub">恒常値と複数の事象を組み合わせ、ゲーム全体の加重平均会心率を計算します</p>
+  </div>
+
+  <div class="container">
+    <div class="base-row">
+      <div class="field-card">
+        <span class="field-label">恒常会心率</span>
+        <div class="field-input-wrap">
+          <input type="number" id="base-crit" value="10" min="0" max="100" step="0.1">
+          <span class="unit">%</span>
+        </div>
+      </div>
+      <div class="field-card">
+        <span class="field-label">ゲーム時間</span>
+        <div class="field-input-wrap">
+          <input type="number" id="game-time" value="120" min="1" step="1">
+          <span class="unit">秒</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="events-section">
+      <div class="events-header">
+        <div class="section-label">会心率上昇事象</div>
+      </div>
+      <div id="events-list"></div>
+      <button class="add-btn" onclick="addEvent()">＋ 事象を追加</button>
+    </div>
+
+    <div class="result-section">
+      <div class="section-label" style="margin-bottom:10px;">計算結果</div>
+      <div class="result-cards">
+        <div class="result-card primary">
+          <div class="result-label">加重平均会心率</div>
+          <div class="result-value" id="res-avg">—</div>
+        </div>
+        <div class="result-card">
+          <div class="result-label">最小会心率（下限）</div>
+          <div class="result-value" id="res-min">—</div>
+        </div>
+        <div class="result-card">
+          <div class="result-label">最大会心率（上限）</div>
+          <div class="result-value" id="res-max">—</div>
+        </div>
+      </div>
+      <div class="breakdown" id="breakdown"></div>
+      <div class="formula-box" id="formula-box"></div>
+    </div>
+  </div>
+
+  <script>
+    let events = [];
+    let idCounter = 0;
+
+    function addEvent() {
+      const id = idCounter++;
+      events.push({ id, name: '事象 ' + (events.length + 1), type: 'conditional', count: 1, totalTime: 10, bonus: 15 });
+      render();
+      calculate();
+    }
+
+    function removeEvent(id) {
+      events = events.filter(e => e.id !== id);
+      render();
+      calculate();
+    }
+
+    function setType(id, type) {
+      const e = events.find(x => x.id === id);
+      if (e) { e.type = type; render(); calculate(); }
+    }
+
+    function updateField(id, field, val) {
+      const e = events.find(x => x.id === id);
+      if (e) { e[field] = parseFloat(val) || 0; calculate(); }
+    }
+
+    function updateName(id, val) {
+      const e = events.find(x => x.id === id);
+      if (e) e.name = val || ('事象 ' + (id + 1));
+    }
+
+    function render() {
+      const list = document.getElementById('events-list');
+      list.innerHTML = '';
+      events.forEach(ev => {
+        const isC = ev.type === 'conditional';
+        const div = document.createElement('div');
+        div.className = 'event-item';
+        div.innerHTML = `
+          <div class="event-top">
+            <input class="event-name-input" type="text" value="${ev.name}" placeholder="事象名" onchange="updateName(${ev.id},this.value)">
+            <div class="type-toggle">
+              <button class="type-btn ${isC ? 'active-cond' : ''}" onclick="setType(${ev.id},'conditional')">条件</button>
+              <button class="type-btn ${!isC ? 'active-const' : ''}" onclick="setType(${ev.id},'constant')">恒常</button>
+            </div>
+            <button class="del-btn" onclick="removeEvent(${ev.id})">削除</button>
+          </div>
+          <div class="event-fields">
+            ${isC ? `
+              <div class="event-field"><label>発動回数</label><input type="number" value="${ev.count}" min="0" step="1" onchange="updateField(${ev.id},'count',this.value)"></div>
+              <div class="event-field"><label>合計発動時間 (秒)</label><input type="number" value="${ev.totalTime}" min="0" step="0.1" onchange="updateField(${ev.id},'totalTime',this.value)"></div>
+            ` : `
+              <div class="event-field"><label>発動継続時間 (秒)</label><input type="number" value="${ev.totalTime}" min="0" step="0.1" onchange="updateField(${ev.id},'totalTime',this.value)"></div>
+              <div class="event-field"></div>
+            `}
+            <div class="event-field"><label>会心率上昇量 (%)</label><input type="number" value="${ev.bonus}" min="0" step="0.1" onchange="updateField(${ev.id},'bonus',this.value)"></div>
+          </div>
+        `;
+        list.appendChild(div);
+      });
+    }
+
+    function calculate() {
+      const base = parseFloat(document.getElementById('base-crit').value) || 0;
+      const gameTime = Math.max(parseFloat(document.getElementById('game-time').value) || 1, 0.001);
+
+      let weightedSum = base * gameTime;
+      let maxBonus = 0;
+      const rows = [];
+
+      events.forEach(ev => {
+        const activeTime = Math.min(Math.max(ev.totalTime, 0), gameTime);
+        weightedSum += ev.bonus * activeTime;
+        maxBonus += ev.bonus;
+        const uptime = activeTime / gameTime;
+        const contribution = ev.bonus * uptime;
+        rows.push({ name: ev.name, type: ev.type, activeTime, uptime, bonus: ev.bonus, contribution });
+      });
+
+      const avg = weightedSum / gameTime;
+      const minVal = base;
+      const maxVal = base + maxBonus;
+
+      document.getElementById('res-avg').textContent = avg.toFixed(2) + '%';
+      document.getElementById('res-min').textContent = minVal.toFixed(1) + '%';
+      document.getElementById('res-max').textContent = maxVal.toFixed(1) + '%';
+
+      // Breakdown
+      const bd = document.getElementById('breakdown');
+      let html = `
+        <div class="bd-row">
+          <div class="bd-left"><span class="bd-name">恒常会心率（基礎値）</span></div>
+          <div class="bd-right">${base.toFixed(1)}% × 常時</div>
+        </div>`;
+
+      rows.forEach(r => {
+        const pct = (r.uptime * 100).toFixed(1);
+        const barW = Math.min(r.uptime * 100, 100).toFixed(1);
+        const badge = r.type === 'conditional'
+          ? '<span class="badge badge-cond">条件</span>'
+          : '<span class="badge badge-const">恒常</span>';
+        html += `
+          <div class="bd-row">
+            <div class="bd-left">
+              ${badge}
+              <span class="bd-name">${r.name}</span>
+              <div class="uptime-bar-wrap"><div class="uptime-bar" style="width:${barW}%"></div></div>
+              <span style="font-size:11px;color:var(--text-dim);flex-shrink:0">${pct}%</span>
+            </div>
+            <div class="bd-right">+${r.bonus.toFixed(1)}% → 平均 +${r.contribution.toFixed(2)}%</div>
+          </div>`;
+      });
+
+      html += `
+        <div class="bd-row total">
+          <div class="bd-left"><span>加重平均会心率</span></div>
+          <div class="bd-right">${avg.toFixed(2)}%</div>
+        </div>`;
+      bd.innerHTML = html;
+
+      // Formula
+      const termsParts = rows.map(r => `${r.bonus.toFixed(1)} × ${(r.uptime * 100).toFixed(1)}%`);
+      const termsStr = termsParts.length ? ' + ' + termsParts.join(' + ') : '';
+      document.getElementById('formula-box').innerHTML =
+        `<span style="color:var(--text-dim)">// 計算式</span><br>` +
+        `平均会心率 = <span class="hl">${base.toFixed(1)}</span>${termsStr ? termsStr.replace(/([0-9.]+) × ([0-9.]+%)/g, '<span class="hl">$1</span> × $2') : ''}<br>` +
+        `&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= <span class="hl">${avg.toFixed(2)}%</span>`;
+    }
+
+    document.getElementById('base-crit').addEventListener('input', calculate);
+    document.getElementById('game-time').addEventListener('input', calculate);
+
+    addEvent();
+  </script>
+</body>
+</html>
