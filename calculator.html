@@ -548,6 +548,7 @@
           </div>
           <div class="event-fields">
             ${isC ? `
+            <div class="event-field"></div>
               <div class="event-field"><label>合計発動時間 (秒)</label><input type="number" value="${ev.totalTime}" min="0" step="0.1" onchange="updateField(${ev.id},'totalTime',this.value)"></div>
             ` : `
               <div class="event-field"><label>発動継続時間 (秒)</label><input type="number" value="${ev.totalTime}" min="0" step="0.1" onchange="updateField(${ev.id},'totalTime',this.value)"></div>
