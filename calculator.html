@@ -507,9 +507,18 @@
     }
 
     function setType(id, type) {
-      const e = events.find(x => x.id === id);
-      if (e) { e.type = type; render(); calculate(); }
+  const e = events.find(x => x.id === id);
+  if (e) {
+    e.type = type;
+    // 「恒常」が選択された場合、ゲーム時間を取得してtotalTimeにセットする
+    if (type === 'constant') {
+      const gameTime = parseFloat(document.getElementById('game-time').value) || 0;
+      e.totalTime = gameTime;
     }
+    render();
+    calculate();
+  }
+}
 
     function updateField(id, field, val) {
       const e = events.find(x => x.id === id);
