@@ -74,5 +74,6 @@
 
 ```
 /
-└── index.html   # ツール本体（単一ファイル）
+└──README.md
+└──calculator.html   # ツール本体（単一ファイル）
 ```
