@@ -6,6 +6,7 @@
 恒常的な会心率に加え、条件・恒常それぞれの事象を複数登録することで、ゲーム全体を通じた会心率の平均値を計算します。
 
 ##　ツールの実行
+
 https://Goya5050.github.io/average-critital-calculator/calculator.html
 
 ---
