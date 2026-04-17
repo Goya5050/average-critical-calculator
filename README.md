@@ -7,7 +7,7 @@
 
 ##　ツールの実行
 
-https://Goya5050.github.io/average-critital-calculator/calculator.html
+https://Goya5050.github.io/average-critical-calculator/calculator.html
 
 ---
 
